@@ -1,0 +1,14 @@
+using gcc in linux
+
+https://www.cprogramming.com/gcc.html
+https://www.cyberciti.biz/faq/linux-freebsd-gcc-cc-see-c-program-output/
+
+
+// example
+
+gcc hello_world.c -o outPut_filename.o
+
+// outPut_filename.o is an executable run in terminal using..
+
+./outPut_filename.o
+
