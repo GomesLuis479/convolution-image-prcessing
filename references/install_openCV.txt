@@ -1,0 +1,52 @@
+**IMPORTANT: use version 3.x ............ 4.x has issues
+
+download opencv from https://opencv.org/releases.html (sources)
+
+install with this guide https://docs.opencv.org/3.4/d7/d9f/tutorial_linux_install.html
+
+
+after installatino..configure:
+
+
+---------------------------------------------- 
+
+sudo nano /etc/ld.so.conf.d/opencv.conf
+
+// add the follwing to  the above file
+
+/usr/local/lib
+
+-------------------------------------------------
+
+sudo ldconfig
+
+------------------------------------------------
+
+sudo nano /etc/bash.bashrc
+
+// add the follwing to  the above file
+
+PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/lib/pkgconfig
+export PKG_CONFIG_PATH
+
+
+//restart terminal
+-----------------------------------------------------
+
+
+
+
+------RUNNIG C++ file------------------------
+
+cd ~/OpenCV-3.x/samples/cpp
+
+//compile
+g++ -std=c++11 hello_world.cpp `pkg-config --libs --cflags opencv` -o outputFilename.o
+
+
+//RUNNIG
+
+./outputFilename.o
+
+-------------------------------------------------
+
