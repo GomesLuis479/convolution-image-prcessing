@@ -1,0 +1,8 @@
+// mat object
+ 
+https://docs.opencv.org/3.4.5/d3/d63/classcv_1_1Mat.html
+
+// reading image
+
+https://jayrambhia.com/blog/get-data-from-mat-cvmat-in-opencv
+
