@@ -26,12 +26,12 @@ int main( int argc, char** argv )
     // first pointers are uint_8
     unsigned char *input = (unsigned char*)(image.data);
 
-    cv::Mat test(cv::Size(image.rows, image.cols), CV_8U, Scalar(125));
-    unsigned char *out = (unsigned char*)(test.data);
+    
+    // unsigned char *out = (unsigned char*)(test.data);
 
-    cout<<"size of test: rows = "<<test.rows<<" cols = "<<test.cols<<" step =  " << test.step << " step image = "<<image.step;
+    //cout<<"size of test: rows = "<<test.rows<<" cols = "<<test.cols<<" step =  " << test.step << " step image = "<<image.step;
 
-    uint16_t i,j; // elements are 16 bit 
+    
     unsigned char r,g,b;
     for(int i = 0;i < image.rows ;i++){
 			for(int j = 0;j < image.cols ;j++){
@@ -50,8 +50,8 @@ int main( int argc, char** argv )
 
 
 
-                if(r != 255 || g != 255 || b != 255 )
-                cout<<"at i,j= "<<i<<", "<<j<<" "<<"( "<<int(r)<<", "<<int(g)<<", "<<int(b)<<" )\n";
+                //if(r != 255 || g != 255 || b != 255 )
+                //cout<<"at i,j= "<<i<<", "<<j<<" "<<"( "<<int(r)<<", "<<int(g)<<", "<<int(b)<<" )\n";
                 //cout<<double(r+g+b)/3<<"\n";
 
                 
@@ -60,13 +60,30 @@ int main( int argc, char** argv )
 
 
     
+    // namedWindow( "Display window", WINDOW_AUTOSIZE );// Create a window for display.
+    // imshow( "Display window", image );
+    // waitKey(0);                                          // Wait for a keystroke in the window
+
+
+
+    Mat test(image.rows, image.cols, CV_8U, Scalar(125));
+    unsigned char* testPtr = (unsigned char*)test.data;
+
+
+    int test_step = test.step;
+    for(int i = 0; i < test.rows; i++) {
+        for(int j = 0; j < test.cols; j++) {
+            unsigned char val = testPtr[test_step*i + j];
+            cout<<"at i,j= "<<i<<", "<<j<<" = "<<int(val)<<"\n";
+
+            // changing the value
+            testPtr[test_step*i + j] = 200;
+        }
+    }
+
     namedWindow( "Display window", WINDOW_AUTOSIZE );// Create a window for display.
-    imshow( "Display window", image );
-
-
-
+    imshow( "Display window", test );
     waitKey(0);                                          // Wait for a keystroke in the window
-
 
     return 0;
 }
