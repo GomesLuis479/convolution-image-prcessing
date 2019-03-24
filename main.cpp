@@ -26,6 +26,9 @@ imageProperties getMeanAndVariance(Mat& image);
 double SSI(Mat& original, Mat& filtered);
 double MSE(Mat& original, Mat& filtered);
 double PSNR(Mat& original, Mat& filtered);
+double ESIH(Mat& original, Mat& filtered);
+double ESIV(Mat& original, Mat& filtered);
+
 
 // test functions;
 void printGrayValues(Mat& grayImage, String imageName);
@@ -36,32 +39,52 @@ int main(int argc, char** argv) {
 
     // ------------------ test -------------
 
-    Mat grayImage = generateTestImage();
-    Mat filteredImage = filerGrayImage(grayImage);
+    // Mat grayImage = generateTestImage();
+    // Mat filteredImage = filerGrayImage(grayImage);
 
-    printGrayValues(grayImage, "input");
-    printGrayValues(filteredImage, "filtered");
+    // printGrayValues(grayImage, "input");
+    // printGrayValues(filteredImage, "filtered");
 
-    // struct imageProperties a = getMeanAndVariance(grayImage);
-    // cout << endl << a.mean << "  " << a.variance;
+    // struct imageProperties g = getMeanAndVariance(grayImage);
+    // cout << endl << g.mean << "  " << g.variance;
 
-    double a = PSNR(grayImage, filteredImage);
-    cout<<endl<<"PSNR: "<<a;
+    // double a = PSNR(grayImage, filteredImage);
+    // cout<<endl<<"PSNR: "<<a<<endl;
+
+    // double b = ESIH(grayImage, filteredImage);
+    // cout<<endl<<"ESIH: "<<b<<endl;
+
+    // double c = ESIV(grayImage, filteredImage);
+    // cout<<endl<<"ESIV: "<<c<<endl;
 
     // -------------------------------------
 
 
-    // Mat inputImage = readImage(argc, argv);
-    // Mat grayImage = convertToGray(inputImage);
-    // Mat filteredImage = filerGrayImage(grayImage);
-    // displayImage(inputImage, "input image");
-    // displayImage(grayImage, "gray image");
-    // displayImage(filteredImage, "filtered image");
+    Mat inputImage = readImage(argc, argv);
+    Mat grayImage = convertToGray(inputImage);
+    Mat filteredImage = filerGrayImage(grayImage);
 
-    // double ssi = SSI(grayImage, filteredImage);
-    // cout<<endl<<ssi;
+    displayImage(inputImage, "input image");
+    displayImage(grayImage, "gray image");
+    displayImage(filteredImage, "filtered image");
 
-    // waitKey(0);                            
+    double _SSI = SSI(grayImage, filteredImage);
+    double _MSE = MSE(grayImage, filteredImage);
+    double _PSNR = PSNR(grayImage, filteredImage);
+    double _ESIH = ESIH(grayImage, filteredImage);
+    double _ESIV = ESIV(grayImage, filteredImage);
+
+    cout << endl << "------   RESULTS   ------" << endl << endl;
+
+    cout << "SSI  : " << _SSI << endl;
+    cout << "MSE  : " << _MSE << endl;
+    cout << "PSNR : " << _PSNR << endl;
+    cout << "ESIH : " << _ESIH << endl;
+    cout << "ESIV : " << _ESIV << endl;
+
+    cout << endl << "-------------------------" << endl;
+    
+    waitKey(0);                            
     return 0;
 }
 
@@ -305,4 +328,66 @@ Mat generateTestImage() {
     }
 
     return grayImage;
+}
+
+double ESIH(Mat& original, Mat& filtered) {
+    double sum1 = 0;
+    double sum2 = 0;
+
+    unsigned char* originalPointer = (unsigned char*)original.data;
+    unsigned char* filteredPointer = (unsigned char*)filtered.data;
+
+    double grayValue1, grayValue2, grayValue3, grayValue4;
+    for(int i = 0; i < original.rows; i++) {
+        for(int j = 0; j < original.cols - 1; j++) {
+
+            // numerator
+            grayValue1 = filteredPointer[filtered.step*i + (j+1) ];
+            grayValue2 = filteredPointer[filtered.step*i + j ];
+
+            sum1 += abs(grayValue1 - grayValue2);
+
+            //denominator
+            grayValue3 = originalPointer[original.step*i + (j+1) ];
+            grayValue4 = originalPointer[original.step*i + j ];
+
+            sum2 += abs(grayValue3 - grayValue4);
+
+        }
+    }
+
+    double returnValue = sum1 / sum2;
+
+    return returnValue;
+}
+
+double ESIV(Mat& original, Mat& filtered) {
+    double sum1 = 0;
+    double sum2 = 0;
+
+    unsigned char* originalPointer = (unsigned char*)original.data;
+    unsigned char* filteredPointer = (unsigned char*)filtered.data;
+
+    double grayValue1, grayValue2, grayValue3, grayValue4;
+    for(int j = 0; j < original.cols - 1; j++) {
+        for(int i = 0; i < original.rows; i++) {
+
+            // numerator
+            grayValue1 = filteredPointer[filtered.step*i + j ];
+            grayValue2 = filteredPointer[filtered.step*(i+1) + j ];
+
+            sum1 += abs(grayValue1 - grayValue2);
+
+            //denominator
+            grayValue3 = originalPointer[original.step*i + j ];
+            grayValue4 = originalPointer[original.step*(i+1) + j ];
+
+            sum2 += abs(grayValue3 - grayValue4);
+
+        }
+    }
+
+    double returnValue = sum1 / sum2;
+
+    return returnValue;
 }
