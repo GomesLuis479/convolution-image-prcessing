@@ -1,31 +1,67 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
+#include <cmath>
+
 
 using namespace cv;
 using namespace std;
-
-Mat readImage(int argc, char** argv);
-Mat convertToGray(Mat& RGBimage);
-void displayImage(Mat& image, String windowName);
-Mat filerGrayImage(Mat& grayImage);
 
 
 struct deviationElem {
     int x, y;
 };
 
+struct imageProperties{
+    double mean, variance;
+};
+
+
+Mat readImage(int argc, char** argv);
+Mat convertToGray(Mat& RGBimage);
+void displayImage(Mat& image, String windowName);
+Mat filerGrayImage(Mat& grayImage);
+imageProperties getMeanAndVariance(Mat& image);
+
+double SSI(Mat& original, Mat& filtered);
+double MSE(Mat& original, Mat& filtered);
+double PSNR(Mat& original, Mat& filtered);
+
+// test functions;
+void printGrayValues(Mat& grayImage, String imageName);
+Mat generateTestImage();
+
+
 int main(int argc, char** argv) {
 
-    Mat inputImage = readImage(argc, argv);
-    Mat grayImage = convertToGray(inputImage);
-    Mat filteredImage = filerGrayImage(grayImage);   
+    // ------------------ test -------------
 
-    displayImage(inputImage, "input image");
-    displayImage(grayImage, "gray image");
-    displayImage(filteredImage, "filtered image");
-    waitKey(0);                            
+    Mat grayImage = generateTestImage();
+    Mat filteredImage = filerGrayImage(grayImage);
 
+    printGrayValues(grayImage, "input");
+    printGrayValues(filteredImage, "filtered");
+
+    // struct imageProperties a = getMeanAndVariance(grayImage);
+    // cout << endl << a.mean << "  " << a.variance;
+
+    double a = PSNR(grayImage, filteredImage);
+    cout<<endl<<"PSNR: "<<a;
+
+    // -------------------------------------
+
+
+    // Mat inputImage = readImage(argc, argv);
+    // Mat grayImage = convertToGray(inputImage);
+    // Mat filteredImage = filerGrayImage(grayImage);
+    // displayImage(inputImage, "input image");
+    // displayImage(grayImage, "gray image");
+    // displayImage(filteredImage, "filtered image");
+
+    // double ssi = SSI(grayImage, filteredImage);
+    // cout<<endl<<ssi;
+
+    // waitKey(0);                            
     return 0;
 }
 
@@ -72,7 +108,7 @@ Mat convertToGray(Mat& RGBimage) {
 
             gray = (r_double + g_double + b_double) / 3; 
 
-            grayPointer[grayImage.step*i + j] = gray;
+            grayPointer[grayImage.step*i + j] = round(gray);
 
         }
     }
@@ -159,10 +195,114 @@ Mat filerGrayImage(Mat& grayImage) {
                 filteredPointer[filteredImage.step*i + j] = 255;
             }
             else {
-                filteredPointer[filteredImage.step*i + j] = filterProduct;
+                filteredPointer[filteredImage.step*i + j] = round(filterProduct);
             }
         }
     }
 
     return filteredImage;
+}
+
+imageProperties getMeanAndVariance(Mat& image) {
+    struct imageProperties returnValue;
+
+    unsigned char* imagePointer = (unsigned char*)image.data;
+
+    double sum1 = 0; 
+    double sum2 = 0;
+    double grayValue;
+
+    for(int i = 0; i < image.rows; i++) {
+        for(int j = 0; j < image.cols; j++) {
+            grayValue =  imagePointer[image.step*i + j ]  ;
+            sum1 += grayValue;
+            sum2 += grayValue * grayValue;
+        }
+    }
+
+    double mean = sum1 / (image.rows * image.cols);
+    double variance = ( sum2 / ( image.rows * image.cols ) ) - (mean*mean);
+
+    returnValue.mean = mean;
+    returnValue.variance = variance;
+
+    return returnValue;
+
+}
+
+double SSI(Mat& original, Mat& filtered) {
+    struct imageProperties originalProps = getMeanAndVariance(original);
+    struct imageProperties filteredProps = getMeanAndVariance(filtered);
+
+    double originalMean = originalProps.mean;
+    double originalVariance = originalProps.variance;
+    double filteredlMean = filteredProps.mean;
+    double filteredVariance = filteredProps.variance;
+
+    double returnValue = ( sqrt(filteredVariance) * originalMean ) / ( filteredlMean * sqrt(originalVariance) );
+
+    return returnValue; 
+
+}
+
+double MSE(Mat& original, Mat& filtered) {
+    double sum = 0;
+
+    unsigned char* originalPointer = (unsigned char*)original.data;
+    unsigned char* filteredPointer = (unsigned char*)filtered.data;
+
+    double grayValue1, grayValue2;
+    for(int i = 0; i < original.rows; i++) {
+        for(int j = 0; j < original.cols; j++) {
+            grayValue1 =  originalPointer[original.step*i + j ]  ;
+            grayValue2 =  filteredPointer[filtered.step*i + j ]  ;
+
+            sum += (grayValue1 - grayValue2) * (grayValue1 - grayValue2);
+        }
+    }
+
+    double returnValue = sum / (original.rows * original.cols);
+
+    return returnValue;
+}
+
+double PSNR(Mat& original, Mat& filtered) {
+    double returnValue = 10 * log10( (255*255) / MSE(original, filtered));
+    return returnValue;
+}
+
+void printGrayValues(Mat& grayImage, String imageName) {
+
+    unsigned char* grayPointer = (unsigned char*)grayImage.data;
+
+    unsigned char grayLevel;
+    cout << endl << "------------   " << imageName << "   ------------" << endl;
+    for(int i = 0; i < grayImage.rows; i++) {
+        for(int j = 0; j < grayImage.cols; j++) {
+            grayLevel = grayPointer[grayImage.step*i + j ] ;
+            cout<<"  "<<int(grayLevel);
+        }
+        cout<<endl;
+    }
+}
+
+Mat generateTestImage() {
+    int rows = 3;
+    int cols = 3;
+    unsigned char test[3][3] = {
+        {10, 10, 10},
+        {100, 100, 100},
+        {10, 10, 10}
+    };
+
+    Mat grayImage(rows, cols, CV_8U, Scalar(0));
+    unsigned char* grayPointer = (unsigned char*)grayImage.data;
+
+    for(int i = 0; i < rows; i++) {
+        for(int j = 0; j < cols; j++) {
+            grayPointer[grayImage.step*i + j] = test[i][j];
+        }
+    }
+
+    return grayImage;
 }
