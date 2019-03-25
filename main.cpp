@@ -27,6 +27,7 @@ void displayImage(Mat& image, String windowName);
 
 // Helper function to find parameters.
 imageProperties getMeanAndVariance(Mat& image);
+double getCovariance(Mat& image1, Mat& image2);
 
 // Functions to calculate filtering quality parameters.
 double SSI(Mat& original, Mat& filtered);
@@ -34,6 +35,7 @@ double MSE(Mat& original, Mat& filtered);
 double PSNR(Mat& original, Mat& filtered);
 double ESIH(Mat& original, Mat& filtered);
 double ESIV(Mat& original, Mat& filtered);
+double SSIM(Mat& original, Mat& filtered);
 
 
 int main(int argc, char** argv) {
@@ -51,6 +53,7 @@ int main(int argc, char** argv) {
     double _PSNR = PSNR(grayImage, filteredImage);
     double _ESIH = ESIH(grayImage, filteredImage);
     double _ESIV = ESIV(grayImage, filteredImage);
+    double _SSIM = SSIM(grayImage, filteredImage);
 
     cout << endl << "------   RESULTS   ------" << endl << endl;
 
@@ -59,6 +62,7 @@ int main(int argc, char** argv) {
     cout << "PSNR : " << _PSNR << endl;
     cout << "ESIH : " << _ESIH << endl;
     cout << "ESIV : " << _ESIV << endl;
+    cout << "SSIM : " << _SSIM << endl;
 
     cout << endl << "-------------------------" << endl;
     
@@ -238,6 +242,37 @@ imageProperties getMeanAndVariance(Mat& image) {
 
 }
 
+double getCovariance(Mat& image1, Mat& image2) {
+    struct imageProperties image1Props = getMeanAndVariance(image1);
+    struct imageProperties image2Props = getMeanAndVariance(image2);
+
+    double image1Mean = image1Props.mean;
+    double image2Mean = image2Props.mean;
+
+    unsigned char* image1Pointer = (unsigned char*)image1.data;
+    unsigned char* image2Pointer = (unsigned char*)image2.data;
+
+    
+    // cov(x, y) = E( (x - x_mean) * ( y - y_mean) )
+
+    double sum = 0;
+    double grayValue1, grayValue2;
+
+    for(int i = 0; i < image1.rows; i++) {
+        for(int j = 0; j < image1.cols; j++) {
+            grayValue1 =  image1Pointer[image1.step*i + j ];
+            grayValue1 =  image2Pointer[image2.step*i + j ];
+
+            sum += (grayValue1 - image1Mean) * ( grayValue2 - image2Mean );
+            
+        }
+    }
+
+    double returnValue = sum / (image1.rows * image1.cols);
+
+    return returnValue;
+}
+
 
 double SSI(Mat& original, Mat& filtered) {
     struct imageProperties originalProps = getMeanAndVariance(original);
@@ -345,6 +380,32 @@ double ESIV(Mat& original, Mat& filtered) {
     }
 
     double returnValue = sum1 / sum2;
+
+    return returnValue;
+}
+
+double SSIM(Mat& original, Mat& filtered) {
+    struct imageProperties originalProps = getMeanAndVariance(original);
+    struct imageProperties filteredProps = getMeanAndVariance(filtered);
+
+    double originalMean = originalProps.mean;
+    double originalVariance = originalProps.variance;
+    double filteredlMean = filteredProps.mean;
+    double filteredVariance = filteredProps.variance;
+    
+    double covariance = getCovariance(original, filtered);
+
+    double c1 = (0.01 * 255) * (0.01 * 255);
+    double c2 = (0.03 * 255) * (0.03 * 255);
+    double c3 = c2 / 2;
+
+    double l = ( 2*originalMean*filteredlMean + c1 ) / ( pow(originalMean, 2) + pow(filteredlMean, 2) + c1 );
+
+    double c = ( 2*sqrt(originalVariance)*sqrt(filteredVariance) + c2 ) / ( originalVariance + filteredVariance + c2 );
+
+    double s = ( covariance + c3 ) / ( sqrt(originalVariance)*sqrt(filteredVariance) + c3 );
+
+    double returnValue = l * c * s;
 
     return returnValue;
 }
